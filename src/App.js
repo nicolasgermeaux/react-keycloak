@@ -1,33 +1,46 @@
-import React from "react";
-import { ReactKeycloakProvider } from "@react-keycloak/web";
-import keycloak from "./Keycloak";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
-import Nav from "./components/Nav";
-import WelcomePage from "./pages/Homepage";
-import SecuredPage from "./pages/Securedpage";
-import PrivateRoute from "./helpers/PrivateRoute";
+import React from 'react';
+import { BrowserRouter as Router, Route, Navigate, Routes } from 'react-router-dom';
+import { getCurrentUser } from './config/Functions';
+import Home from './pages/Homepage';
+import AuthorisedPage from './pages/Securedpage';
+
+const PrivateRoute = ({ component: Component, ...rest }) => (
+  <Routes>
+  <Route {...rest} render={props => (
+    getCurrentUser() ? (
+      <Component {...props} />
+    ) : (
+        <Navigate to={{
+          pathname: '/',
+          state: { from: props.location }
+        }} />
+      )
+  )} />
+  </Routes>
+)
+const NonPrivateRoute = ({ component: Component, ...rest }) => (
+  <Routes>
+
+  <Route {...rest} render={props => (
+    getCurrentUser() ? (
+      <Navigate to={{
+        pathname: "/auth",
+        state: { from: props.location }
+      }} />
+    ) : (
+        <Component {...props} />
+      )
+  )} />
+    </Routes>
+)
 
 function App() {
- return (
-   <div>
-     <ReactKeycloakProvider authClient={keycloak}>
-       <Nav />
-       <BrowserRouter>
-         <Routes>
-           <Route exact path="/" element={<WelcomePage />} />
-           <Route
-             path="/secured"
-             element={
-               <PrivateRoute>
-                 <SecuredPage />
-               </PrivateRoute>
-             }
-           />
-         </Routes>
-       </BrowserRouter>
-     </ReactKeycloakProvider>
-   </div>
- );
+  return (
+    <Router>
+      <NonPrivateRoute exact path="/" component={Home} />
+      <PrivateRoute exact path="/auth" component={AuthorisedPage} />
+    </Router>
+  );
 }
 
 export default App;
